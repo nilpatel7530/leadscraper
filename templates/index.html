@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NilLeads — AI-Powered Client Finder (Gemma 4 E4B)</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&family=Space+Grotesk:wght@300..700&display=swap" rel="stylesheet">
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <!-- Glassmorphic Style Stylesheet -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+    <!-- Ambient Blur Spots for UI/UX depth -->
+    <div class="ambient-blobs">
+        <div class="blob blob-1"></div>
+        <div class="blob blob-2"></div>
+        <div class="blob blob-3"></div>
+    </div>
+
+    <div class="container">
+        
+        <!-- SECTION 1: Header Bar -->
+        <header>
+            <div class="logo-group">
+                <i data-lucide="compass" class="logo-icon" size="32"></i>
+                <div class="logo-text">
+                    <h1>NilLeads</h1>
+                    <p>AI-Powered Client Finder</p>
+                </div>
+            </div>
+            
+            <div class="header-controls">
+                <!-- Thinking Mode Toggle -->
+                <div class="thinking-toggle" id="thinking-toggle" title="Toggle deconstructive reasoning. Deactivating speeds up JSON extraction.">
+                    <i data-lucide="brain"></i>
+                    <span>Thinking: OFF</span>
+                    <div class="thinking-switch"></div>
+                </div>
+                
+                <!-- Outreach Templates Customizer Button -->
+                <button type="button" class="theme-toggle" id="template-customizer-btn" onclick="openTemplateCustomizer()" title="Edit global B2B cold outreach templates and placeholders" style="background: rgba(168, 85, 247, 0.05); border-color: rgba(168, 85, 247, 0.2); color: var(--thinking); display: flex; align-items: center; gap: 8px;">
+                    <i data-lucide="settings" size="14"></i>
+                    <span>Templates</span>
+                </button>
+                
+                <!-- Theme Toggle Switcher -->
+                <button type="button" class="theme-toggle" id="theme-toggle" onclick="toggleTheme()" title="Toggle Widescreen Light / Dark Theme">
+                    <i data-lucide="moon" id="theme-icon" size="14"></i>
+                    <span id="theme-text">Dark Mode</span>
+                </button>
+                
+                <!-- Status Pill -->
+                <div class="status-pill" id="status-pill">
+                    <span class="status-dot offline" id="status-dot"></span>
+                    <span id="status-text">Gemma 4: Checking...</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Widescreen Content App Grid -->
+        <div class="app-grid">
+            
+            <!-- LEFT COLUMN: Sticky Search Panel -->
+            <div class="glass-panel search-panel">
+                <div class="panel-title">
+                    <div class="left">
+                        <i data-lucide="search"></i>
+                        <h2>Target Prospect Search</h2>
+                    </div>
+                </div>
+                
+                <form class="search-form" id="search-form" onsubmit="event.preventDefault(); triggerLeadScan();">
+                    
+                    <!-- Source selector checklist -->
+                    <div class="source-multiselect-group">
+                        <label>Scrape Source Directories (Crawl Together)</label>
+                        <div class="sources-checkbox-grid">
+                            <div class="source-checkbox-item">
+                                <input type="checkbox" id="src-google" class="src-checkbox" value="google" checked>
+                                <label for="src-google">
+                                    <i data-lucide="globe"></i> Google Search
+                                </label>
+                            </div>
+                            <div class="source-checkbox-item">
+                                <input type="checkbox" id="src-justdial" class="src-checkbox" value="justdial" checked>
+                                <label for="src-justdial">
+                                    <i data-lucide="phone-call"></i> JustDial India
+                                </label>
+                            </div>
+                            <div class="source-checkbox-item">
+                                <input type="checkbox" id="src-indiamart" class="src-checkbox" value="indiamart" checked>
+                                <label for="src-indiamart">
+                                    <i data-lucide="shopping-cart"></i> IndiaMart
+                                </label>
+                            </div>
+                            <div class="source-checkbox-item">
+                                <input type="checkbox" id="src-custom" class="src-checkbox" value="custom" onchange="toggleCustomUrlCheckbox()">
+                                <label for="src-custom">
+                                    <i data-lucide="link"></i> Custom URL
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Niche Input -->
+                    <div class="form-group">
+                        <label for="niche-input">Business Niche</label>
+                        <div class="input-wrapper">
+                            <i data-lucide="briefcase"></i>
+                            <input type="text" class="form-control" id="niche-input" placeholder="e.g., clinics, real estate, salons" required autocomplete="off">
+                        </div>
+                        <div class="history-dropdown" id="niche-history"></div>
+                    </div>
+                    
+                    <!-- Location Input -->
+                    <div class="form-group">
+                        <label for="location-input">Target Location</label>
+                        <div class="input-wrapper">
+                            <i data-lucide="map-pin"></i>
+                            <input type="text" class="form-control" id="location-input" placeholder="e.g., Vadodara, Gujarat" required autocomplete="off">
+                        </div>
+                        <div class="history-dropdown" id="location-history"></div>
+                    </div>
+                    
+                    <!-- Submit button -->
+                    <button type="submit" class="btn-scan" id="btn-submit">
+                        <i data-lucide="cpu" id="submit-icon"></i>
+                        <span id="submit-text">Find Leads</span>
+                    </button>
+                    
+                    <!-- Custom URL input (Conditional) -->
+                    <div class="form-group custom-url-group" id="custom-url-group">
+                        <label for="custom-url-input">Target Web Address</label>
+                        <div class="input-wrapper">
+                            <i data-lucide="link-2"></i>
+                            <input type="text" class="form-control" id="custom-url-input" placeholder="https://example-site.com/contact-us">
+                        </div>
+                    </div>
+                    
+                    <!-- Context Usage Bar -->
+                    <div class="context-usage-box">
+                        <div class="context-bar-info">
+                            <span>128K Batch Context Limit (Gemma 4 E4B MoE)</span>
+                            <span>Tokens Used: <span class="value" id="context-tokens-used">0</span> / 131,072</span>
+                        </div>
+                        <div class="context-bar-outer" title="Visual representation of the batched search context usage relative to the local LLM limit.">
+                            <div class="context-bar-inner" id="context-bar-inner"></div>
+                        </div>
+                    </div>
+                    
+                </form>
+            </div> <!-- End Left Column Search Panel -->
+
+            <!-- RIGHT COLUMN: Main Content Area -->
+            <div class="main-content">
+
+                <!-- SECTION 3: Live Results Feed & Logger Console -->
+                <div class="glass-panel" id="live-panel" style="display: none;">
+                <div class="panel-title">
+                    <div class="left">
+                        <i data-lucide="activity"></i>
+                        <h2>Live Extractor Feed</h2>
+                    </div>
+                </div>
+                
+                <div class="live-grid">
+                    <!-- Console box logger -->
+                    <div class="console-container" id="console-box">
+                        <div class="console-line">
+                            <span class="console-time">[00:00:00]</span>
+                            <span class="console-text">Engine ready and waiting...</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Leads cards grid -->
+                    <div class="leads-stream-grid" id="live-cards-container">
+                        <!-- Streamed lead cards appear here dynamically -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECTION 3.5: Dashboard Analytics Panel -->
+            <div class="glass-panel analytics-panel" style="margin-bottom: 30px;">
+                <div class="panel-title folding-header" onclick="toggleAnalyticsDashboard()" id="analytics-header" style="cursor: pointer; display: flex; justify-content: space-between; align-items: center; user-select: none;">
+                    <div class="left" style="display: flex; align-items: center; gap: 12px;">
+                        <i data-lucide="bar-chart-3" style="color: var(--accent); filter: drop-shadow(0 0 6px var(--accent-glow));"></i>
+                        <h2>CRM Analytics & Pipeline Funnel</h2>
+                    </div>
+                    <button type="button" class="btn-toggle-panel" title="Minimize/Maximize Dashboard" style="background: none; border: none; color: var(--text-muted); cursor: pointer; display: flex; align-items: center;">
+                        <i data-lucide="chevron-up" id="analytics-chevron" size="18"></i>
+                    </button>
+                </div>
+                
+                <div class="analytics-content" id="analytics-content" style="transition: var(--transition); max-height: 1000px; overflow: hidden; margin-top: 15px;">
+                    <div class="charts-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px;">
+                        <!-- Chart 1: Funnel Chart -->
+                        <div class="chart-card" style="background: rgba(3, 6, 15, 0.25); border: 1px solid var(--border); border-radius: 16px; padding: 20px;">
+                            <h3 style="font-size: 13px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+                                <i data-lucide="filter" size="14" style="color: var(--thinking);"></i> Sales Pipeline Funnel
+                            </h3>
+                            <div class="chart-container" id="funnel-chart-container" style="height: 200px; position: relative;">
+                                <!-- SVG Chart dynamically rendered by vanilla JS -->
+                            </div>
+                        </div>
+                        
+                        <!-- Chart 2: Niche Donut -->
+                        <div class="chart-card" style="background: rgba(3, 6, 15, 0.25); border: 1px solid var(--border); border-radius: 16px; padding: 20px;">
+                            <h3 style="font-size: 13px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+                                <i data-lucide="pie-chart" size="14" style="color: var(--accent);"></i> Niche Distribution
+                            </h3>
+                            <div class="chart-container" id="donut-chart-container" style="height: 200px; position: relative;">
+                                <!-- SVG Chart dynamically rendered by vanilla JS -->
+                            </div>
+                        </div>
+                        
+                        <!-- Chart 3: Fit Score Bar -->
+                        <div class="chart-card" style="background: rgba(3, 6, 15, 0.25); border: 1px solid var(--border); border-radius: 16px; padding: 20px;">
+                            <h3 style="font-size: 13px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+                                <i data-lucide="zap" size="14" style="color: var(--success);"></i> Prospect Quality (Fit Score)
+                            </h3>
+                            <div class="chart-container" id="bar-chart-container" style="height: 200px; position: relative;">
+                                <!-- SVG Chart dynamically rendered by vanilla JS -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECTION 4: Leads Database -->
+            <div class="glass-panel">
+                <div class="panel-title">
+                    <div class="left">
+                        <i data-lucide="database"></i>
+                        <h2>Leads Database</h2>
+                    </div>
+                </div>
+                
+                <!-- Database Stats bar -->
+                <div class="stats-bar">
+                    <div class="stat-card">
+                        <span class="label">Total Leads</span>
+                        <span class="value" id="stat-total">0</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="label">Hot Prospects</span>
+                        <span class="value hot-text" id="stat-hot">0</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="label">Contacted Clients</span>
+                        <span class="value" id="stat-contacted">0</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="label">Conversion Rate</span>
+                        <span class="value conv-text" id="stat-conversion">0%</span>
+                    </div>
+                </div>
+                
+                <!-- Bulk actions bar (Conditional) -->
+                <div class="bulk-action-bar" id="bulk-action-bar" style="display: none; justify-content: space-between; align-items: center; padding: 12px 20px; background: rgba(0, 212, 255, 0.05); border: 1px solid var(--border); border-radius: 14px; margin-bottom: 20px; gap: 15px;">
+                    <div class="bulk-action-info" style="font-size: 13px; font-weight: 600; color: var(--text);">
+                        Bulk operations active: <span class="count" id="checked-count" style="color: var(--accent); font-weight: 800; font-family: var(--font-data);">0</span> leads selected.
+                    </div>
+                    <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+                        <div style="display: flex; align-items: center; gap: 6px;">
+                            <span style="font-size: 11px; color: var(--text-muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Update CRM Stage:</span>
+                            <select id="bulk-status-select" class="filter-control" style="padding: 4px 10px; height: 28px; font-size: 11px; border-radius: 8px; background: var(--bg); border: 1px solid var(--border); color: var(--text);">
+                                <option value="New">New</option>
+                                <option value="Pitch Sent">Pitch Sent</option>
+                                <option value="Replied">Replied</option>
+                                <option value="Meeting Booked">Meeting Booked</option>
+                                <option value="Closed Won">Closed Won</option>
+                                <option value="Not Interested">Not Interested</option>
+                            </select>
+                            <button class="btn-action success" onclick="executeBulkStatusUpdate()" title="Update CRM stage for all checked leads" style="height: 28px; padding: 0 12px; font-size: 11px; gap: 4px; display: flex; align-items: center; border-radius: 8px; border: 1px solid var(--success);">
+                                <i data-lucide="check" size="12"></i> Apply Stage
+                            </button>
+                        </div>
+                        <button class="btn-action danger" onclick="executeBulkDelete()" title="Bulk delete all checked lead records from SQLite" style="height: 28px; padding: 0 12px; font-size: 11px; gap: 4px; display: flex; align-items: center; border-radius: 8px; border: 1px solid var(--danger);">
+                            <i data-lucide="trash-2" size="12"></i> Delete Selected
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Table Filters and searches -->
+                <div class="table-controls">
+                    <div class="filter-group">
+                        <!-- Niche Filter -->
+                        <div>
+                            <select class="filter-control" id="filter-niche" onchange="fetchLeads()">
+                                <option value="">All Niches</option>
+                            </select>
+                        </div>
+                        
+                        <!-- Fit Score range bands -->
+                        <div>
+                            <select class="filter-control" id="filter-score" onchange="fetchLeads()">
+                                <option value="">All Scores</option>
+                                <option value="8">Hot Prospects (8-10)</option>
+                                <option value="5">Warm Prospects (5-7)</option>
+                                <option value="1">Cold Prospects (1-4)</option>
+                            </select>
+                        </div>
+                        
+                        <!-- CRM Pipeline status filter -->
+                        <div>
+                            <select class="filter-control" id="filter-sales-status" onchange="fetchLeads()">
+                                <option value="">All CRM Stages</option>
+                                <option value="New">New</option>
+                                <option value="Pitch Sent">Pitch Sent</option>
+                                <option value="Replied">Replied</option>
+                                <option value="Meeting Booked">Meeting Booked</option>
+                                <option value="Closed Won">Closed Won</option>
+                                <option value="Not Interested">Not Interested</option>
+                            </select>
+                        </div>
+                        
+                        <!-- Website presence filter -->
+                        <div>
+                            <select class="filter-control" id="filter-has-web" onchange="fetchLeads()">
+                                <option value="">Web Presence</option>
+                                <option value="0">No Website (High priority)</option>
+                                <option value="1">Has Website</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div style="display: flex; gap: 12px; align-items: center;">
+                        <!-- Text search bar -->
+                        <div class="search-box">
+                            <i data-lucide="search"></i>
+                            <input type="text" id="db-search" placeholder="Search contact, business, tip..." oninput="fetchLeads()">
+                        </div>
+                        
+                        <!-- Export CSV button -->
+                        <button class="btn-action btn-export" onclick="exportDatabaseToCsv()" title="Download entire SQLite lead database snapshot to Excel CSV">
+                            <i data-lucide="file-spreadsheet"></i> Export CSV
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Leads SQLite database table -->
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th class="checkbox-cell">
+                                    <span class="custom-checkbox" id="th-select-all" onclick="toggleAllRows()"></span>
+                                </th>
+                                <th onclick="sortDbTable('business')">Business <span class="sort-indicator" id="sort-business">⇅</span></th>
+                                <th onclick="sortDbTable('name')">Contact <span class="sort-indicator" id="sort-name">⇅</span></th>
+                                <th>Details</th>
+                                <th onclick="sortDbTable('fit_score')">Fit Score <span class="sort-indicator" id="sort-fit_score">⇅</span></th>
+                                <th>AI Evaluation & Pitch Tip</th>
+                                <th>My Inline Notes</th>
+                                <th>Follow-up</th>
+                                <th onclick="sortDbTable('sales_status')">CRM Pipeline <span class="sort-indicator" id="sort-sales_status">⇅</span></th>
+                                <th>Cold Pitch & Outreach</th>
+                                <th style="text-align: center;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="db-table-body">
+                            <!-- Populated dynamically via REST API calls -->
+                        </tbody>
+                    </table>
+                    
+                    <!-- Table Zero State -->
+                    <div class="zero-state" id="db-zero-state" style="display: none;">
+                        <i data-lucide="inbox"></i>
+                        <p>No leads found. Enter a niche and target location above to scan local businesses!</p>
+                    </div>
+                </div>
+                
+            </div> <!-- End Leads Database panel -->
+            
+        </div> <!-- End Right Main Content Column -->
+        
+    </div> <!-- End App Widescreen Grid -->
+    
+</div> <!-- End Widescreen Container -->
+
+    <!-- Outreach Pitch Modal -->
+    <div id="pitch-modal" class="modal-overlay" style="display: none;">
+        <div class="modal-content glass-panel">
+            <div class="modal-header">
+                <h3><i data-lucide="mail"></i> Personalized Cold Outreach Pitch</h3>
+                <button type="button" class="modal-close-btn" onclick="closePitchModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p class="modal-help-text">NilLeads generated this custom B2B cold outreach pitch using the prospect's specific audit deficiencies. You can copy it or launch a pre-filled email/WhatsApp message directly!</p>
+                <div class="pitch-text-container">
+                    <textarea id="pitch-modal-textarea" rows="12" class="form-control pitch-textarea"></textarea>
+                </div>
+                <div class="modal-outreach-channels">
+                    <div class="channel-info" id="modal-channel-info"></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-action btn-copy-pitch" onclick="copyPitchFromModal()" id="btn-modal-copy">
+                    <i data-lucide="copy" size="14"></i> Copy Pitch
+                </button>
+                <button class="btn-action success" onclick="sendWhatsappFromModal()" id="btn-modal-whatsapp" style="display: none;">
+                    <i data-lucide="phone" size="14"></i> Send via WhatsApp
+                </button>
+                <button class="btn-action btn-export" onclick="sendEmailFromModal()" id="btn-modal-email" style="display: none;">
+                    <i data-lucide="mail" size="14"></i> Send via Email
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- [NEW] Outreach Template Editor Modal -->
+    <div id="template-modal" class="modal-overlay" style="display: none; align-items: center; justify-content: center; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 1000;">
+        <div class="modal-content glass-panel" style="max-width: 600px; width: 90%;">
+            <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 12px; margin-bottom: 15px;">
+                <h3 style="display: flex; align-items: center; gap: 8px; font-size: 18px; color: #FFF;"><i data-lucide="settings" style="color: var(--thinking);"></i> Global Outreach Templates</h3>
+                <button type="button" class="modal-close-btn" onclick="closeTemplateCustomizer()" style="background: none; border: none; color: var(--text-muted); font-size: 24px; cursor: pointer;">&times;</button>
+            </div>
+            <div class="modal-body" style="display: flex; flex-direction: column; gap: 12px;">
+                <p class="modal-help-text" style="font-size: 12px; color: var(--text-muted); line-height: 1.4;">Customize the default outreach template. Click tags to insert dynamic placeholders that compile automatically for each lead:</p>
+                
+                <div class="placeholder-tags-container" style="display: flex; flex-wrap: wrap; gap: 8px; padding: 10px; background: rgba(0, 0, 0, 0.15); border-radius: 8px; border: 1px dashed var(--border);">
+                    <span class="tag-badge" title="Insert Prospect's Name" onclick="insertTemplateTag('{name}')" style="cursor: pointer; font-size: 10px; font-family: var(--font-data); padding: 4px 8px; background: rgba(0, 212, 255, 0.08); border: 1px solid var(--border); border-radius: 4px; color: var(--accent);">{name}</span>
+                    <span class="tag-badge" title="Insert Business Name" onclick="insertTemplateTag('{business}')" style="cursor: pointer; font-size: 10px; font-family: var(--font-data); padding: 4px 8px; background: rgba(0, 212, 255, 0.08); border: 1px solid var(--border); border-radius: 4px; color: var(--accent);">{business}</span>
+                    <span class="tag-badge" title="Insert Lead Niche Category" onclick="insertTemplateTag('{niche}')" style="cursor: pointer; font-size: 10px; font-family: var(--font-data); padding: 4px 8px; background: rgba(0, 212, 255, 0.08); border: 1px solid var(--border); border-radius: 4px; color: var(--accent);">{niche}</span>
+                    <span class="tag-badge" title="Insert AI Pitch Tip" onclick="insertTemplateTag('{outreach_tip}')" style="cursor: pointer; font-size: 10px; font-family: var(--font-data); padding: 4px 8px; background: rgba(0, 212, 255, 0.08); border: 1px solid var(--border); border-radius: 4px; color: var(--accent);">{outreach_tip}</span>
+                    <span class="tag-badge" title="Insert Website URL" onclick="insertTemplateTag('{website}')" style="cursor: pointer; font-size: 10px; font-family: var(--font-data); padding: 4px 8px; background: rgba(0, 212, 255, 0.08); border: 1px solid var(--border); border-radius: 4px; color: var(--accent);">{website}</span>
+                    <span class="tag-badge" title="Insert Business Address" onclick="insertTemplateTag('{address}')" style="cursor: pointer; font-size: 10px; font-family: var(--font-data); padding: 4px 8px; background: rgba(0, 212, 255, 0.08); border: 1px solid var(--border); border-radius: 4px; color: var(--accent);">{address}</span>
+                    <span class="tag-badge" title="Insert Fit Score (1-10)" onclick="insertTemplateTag('{fit_score}')" style="cursor: pointer; font-size: 10px; font-family: var(--font-data); padding: 4px 8px; background: rgba(0, 212, 255, 0.08); border: 1px solid var(--border); border-radius: 4px; color: var(--accent);">{fit_score}</span>
+                </div>
+                
+                <div class="form-group" style="display: flex; flex-direction: column; gap: 6px;">
+                    <label for="outreach-template-textarea" style="font-size: 10px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;">Outreach Template Copy</label>
+                    <textarea id="outreach-template-textarea" rows="8" class="form-control" style="font-family: var(--font-headings); font-size: 13px; line-height: 1.4; resize: vertical; background: rgba(0,0,0,0.2); border: 1px solid var(--border); border-radius: 8px; color: var(--text); padding: 10px;"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer" style="display: flex; gap: 10px; justify-content: flex-end; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 12px; margin-top: 10px;">
+                <button class="btn-action danger" onclick="resetDefaultTemplate()" style="margin-right: auto; padding: 6px 12px; font-size: 12px; border-radius: 8px;">
+                    <i data-lucide="rotate-ccw" size="12" style="margin-right: 4px;"></i> Reset Default
+                </button>
+                <button class="btn-action" onclick="closeTemplateCustomizer()" style="padding: 6px 12px; font-size: 12px; border-radius: 8px;">
+                    Cancel
+                </button>
+                <button class="btn-action success" onclick="saveCustomTemplate()" style="padding: 6px 12px; font-size: 12px; border-radius: 8px; border: 1px solid var(--success);">
+                    <i data-lucide="check" size="12" style="margin-right: 4px;"></i> Save Template
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Frontend Core Business Script -->
+    <script src="{{ url_for('static', filename='app.js') }}"></script>
+</body>
+</html>
