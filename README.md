@@ -138,3 +138,7 @@ CREATE TABLE leads (
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 Co-engineered with ❤️ by **[Nil Patel](https://nilpatel.snpsolutions.co.nz)**. If this project helps you find clients, drop a star! ⭐
+
+
+---
+*Made with Antigravity*
